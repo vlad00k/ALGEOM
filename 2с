@@ -156,8 +156,8 @@ int is_collinear(vector_3d v1, vector_3d v2)
 
 int get_rank(vector_3d v1, vector_3d v2, vector_3d v3)
 {
-    if (is_null_vector(v1) && is_null_vector(v2) && is_null_vector(v3))
-        return 0;
+    if (is_null_vector(v1) || is_null_vector(v2) || is_null_vector(v3))
+        return -1;
     if (is_collinear(v1, v2) && is_collinear(v1, v3))
         return 1;
     else if (is_collinear(v1, v2) || is_collinear(v1, v3) || is_collinear(v2, v3))
@@ -184,6 +184,9 @@ int main(int args, char* argv[])
     else
         printf("Векторы не компланарны\n");
     int rank = get_rank(v1, v2, v3);
+    if (rank==-1)
+    printf("получен нулевой вектор");
+    else
     printf("Ранг системы равен %d\n", rank);
 
     return 0;
