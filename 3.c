@@ -3,16 +3,15 @@
 #include <locale.h>
 #include <math.h>
 #include <malloc.h>
-
 float dot(int vector[], float basis_vector[], int dementions);
-int is_perpendicular_to_basis(int vector[], float* basis[], int dementions);
+int is_new_basis(int vector[], float* basis[], int dementions);
 float get_length(int vector[], int dementions);
 void get_unit_vector(int vector[], float basis_vector[], int dementions);
 int is_zero_vector(int vector[], int dementions);
 int is_zero_basis_vector(float vector[], int dementions);
 void init_basis(float* basis[], int demensions);
-int is_almost_equal(float a, float b);
-
+int almost_equal(float a, float b);
+float is_collinear(int vector[], float basis_vector[], int dementions);
 int main()
 {
 	setlocale(LC_ALL, "Rus");
@@ -23,7 +22,7 @@ int main()
 	for (int i=0;i<number_of_vectors;i++)
 	{
 			int*vector=(int*)malloc(dementions*sizeof(int));
-			printf("Enter coordinates of %d vector with spaces:",i+1);  
+			printf("Enter coordinates of %d vector with spaces:",i+1);
 			for(int j=0;j<dementions;j++)
 			{
 					scanf("%d",&vector[j]);
@@ -41,12 +40,15 @@ int main()
 	for (int i = 0; i < number_of_vectors; i++)
 	{
 		if (current_basis_idx >= dementions)
+		{
+			extra_vector_counter += number_of_vectors - i;
 			break;
+		}
 
 		if (!is_zero_vector(vectors[i], dementions))
 		{
-			if (is_perpendicular_to_basis(vectors[i], basis, dementions))
-			{				
+			if (is_new_basis(vectors[i], basis, dementions))
+			{
 				get_unit_vector(vectors[i], basis[current_basis_idx], dementions);
 				current_basis_idx++;
 			}
@@ -65,7 +67,7 @@ int main()
 	{
 		if (is_zero_basis_vector(basis[i], dementions))
 			break;
-		printf("%d basis vector is: ", i + 1);  // %d базисный вектор: 
+		printf("%d basis vector is: ", i + 1);  // %d базисный вектор:
 		for (int k = 0; k < dementions; k++)
 			printf("%.2f ", basis[i][k]);
 		printf("\n");
@@ -74,17 +76,29 @@ int main()
 
 }
 
-float dot(int vector[], float basis_vector[], int dementions)
+float is_collinear(int vector[], float basis_vector[], int dementions)
 {
-	float result = 0.0;
+	float ratio = 0.0;
 	for (int i = 0; i < dementions; i++)
+		if (vector[i] != 0 && !almost_equal(basis_vector[i], 0.0))
+		{
+			ratio += (float)vector[i] / basis_vector[i];
+			break;
+		}
+
+	if (ratio == 0.0)
+		return 0;
+	else
 	{
-		result += (float)vector[i] * basis_vector[i];
+		for (int i = 0; i < dementions; i++)
+			if (!almost_equal((float)vector[i], ratio * basis_vector[i]))
+				return 0;
 	}
-	return result;
+	return 1;
+
 }
 
-int is_almost_equal(float a, float b)
+int almost_equal(float a, float b)
 {
 	if (a > b)
 		return a - b < 0.0001 ? 1 : 0;
@@ -92,19 +106,18 @@ int is_almost_equal(float a, float b)
 		return b - a < 0.0001 ? 1 : 0;
 }
 
-int is_perpendicular_to_basis(int vector[], float* basis[], int dementions)
+int is_new_basis(int vector[], float* basis[], int dementions)
 {
 	if (is_zero_basis_vector(basis[0], dementions))
 		return 1;
-
 	for (int i = 0; i < dementions; i++)
 	{
 		if (is_zero_basis_vector(basis[i], dementions))
 			return 1;
-		if (is_almost_equal(dot(vector, basis[i], dementions), 0.0))
+		if (is_collinear(vector, basis[i], dementions))
 			return 0;
 	}
-	return 1;
+	return 0;
 }
 
 float get_length(int vector[], int dementions)
