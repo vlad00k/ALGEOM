@@ -1,0 +1,165 @@
+#include <stdio.h>
+
+int almost_equal(double a, double b)
+{
+    if (a > b)
+        return a - b < 0.001 ? 1 : 0;
+    else
+        return b - a < 0.001 ? 1 : 0;
+}
+
+int get_determinant(int n, double matrix[n][n])
+{
+    int determinant = 0;
+    if (n == 2)
+        determinant = matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
+    else
+    {
+        int sign = 1;
+        double submatrix[n - 1][n - 1];
+        for (int i = 0; i < n; i++)
+        {
+            for (int ii = 0; ii < i; ii++)
+                for (int kk = 0; kk < n - 1; kk++)
+                    submatrix[ii][kk] = matrix[ii][kk + 1];
+
+            for (int ii = i + 1; ii < n; ii++)
+                for (int kk = 1; kk < n; kk++)
+                    submatrix[ii - 1][kk - 1] = matrix[ii][kk];
+            determinant += sign * matrix[i][0] * get_determinant(n - 1, submatrix);
+            sign = -1 * sign;
+        }
+    }
+    return determinant;
+}
+
+void print_matrix(int rows, int columns, double matrix[rows][columns])
+{
+    for (int r = 0; r < rows; r++)
+    {
+        for (int c = 0; c < columns; c++)
+        {
+            printf("%4.2lf ", matrix[r][c]);
+        }
+        printf("\n");
+    }
+}
+
+int is_singular_matrix(int dementions, double matrix[dementions][dementions])
+{
+    if (almost_equal(get_determinant(dementions, matrix), 0.0))
+        return 1;
+    else
+        return 0;
+}
+
+void init_extended_matrix(int dementions, double extended_matrix[dementions][2 * dementions], double matrix[dementions][dementions])
+{
+    for (int i = 0; i < dementions; i++)
+    {
+        for (int k = 0; k < dementions; k++)
+            extended_matrix[i][k] = matrix[i][k];
+
+        for (int k = dementions; k < 2 * dementions; k++)
+        {
+            if (k - dementions == i)
+                extended_matrix[i][k] = 1;
+            else
+                extended_matrix[i][k] = 0;
+        }
+    }
+}
+
+int get_not_zero_idx(int dementions, double matrix[dementions][2 * dementions], int row)
+{
+    for (int i = row; i < dementions; i++)
+        if (!almost_equal(matrix[i][row], 0.0))
+            return i;
+    return -1;
+}
+
+void spaw_rows(int dementions, double extended_matrix[dementions][dementions], int row_idx1, int row_idx2)
+{
+    double temp;
+    for (int i = 0; i < 2 * dementions; i++)
+    {
+        temp = extended_matrix[row_idx1][i];
+        extended_matrix[row_idx1][i] = extended_matrix[row_idx2][i];
+        extended_matrix[row_idx2][i] = temp;
+    }
+}
+
+void inverte_matrix(int dementions, double matrix[dementions][dementions])
+{
+    double extended_matrix[dementions][dementions * 2];
+    init_extended_matrix(dementions, extended_matrix, matrix);
+
+    for (int r = 0; r < dementions; r++)
+    {
+        // print_matrix(dementions, 2 * dementions, extended_matrix);
+        // printf("\n");
+        int not_zero_row_idx = get_not_zero_idx(dementions, extended_matrix, r);
+        if (not_zero_row_idx == -1)
+        {
+            printf("No nonzero rows found!");
+            return;
+        }
+        // printf("r = %d idx = %d ", r, not_zero_row_idx);
+        spaw_rows(dementions, extended_matrix, r, not_zero_row_idx);
+
+        // printf("After swap\n");
+        // print_matrix(dementions, 2 * dementions, extended_matrix);
+        // printf("\n");
+
+      
+        for (int c = dementions * 2 - 1; c > r; c--)
+            extended_matrix[r][c] /= extended_matrix[r][r];
+
+        for (int i = r + 1; i < dementions; i++)
+        {
+            double ratio = extended_matrix[i][r];
+            for (int k = 0; k < 2 * dementions; k++)
+                extended_matrix[i][k] -= ratio * extended_matrix[r][k];
+        }
+
+        for (int i = r - 1; i > -1; i--)
+        {
+            double ratio = extended_matrix[i][r];
+            for (int k = 0; k < 2 * dementions; k++)
+                extended_matrix[i][k] -= ratio * extended_matrix[r][k];
+        }
+    }
+
+    for (int i = 0; i < dementions; i++)
+        for (int k = 0; k < dementions; k++)
+            matrix[i][k] = extended_matrix[i][dementions + k];
+}
+
+int main()
+{
+    int dementions;
+    printf("Enter N: ");
+    scanf("%d", &dementions);
+    printf("Enter matrix:\n");
+    double matrix[dementions][dementions];
+    for (int i = 0; i < dementions; i++)
+    {
+        for (int j = 0; j < dementions; j++)
+        {
+            scanf("%lf", &matrix[i][j]);
+        }
+    }
+
+    if (is_singular_matrix(dementions, matrix))
+    {
+        printf("The matrix is singular.");
+    }
+    else
+    {
+        inverte_matrix(dementions, matrix);
+        printf("Inverted matrix is:\n");
+        print_matrix(dementions, dementions, matrix);
+    }
+
+    return 0;
+}
